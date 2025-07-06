@@ -1,0 +1,42 @@
+#Crear un directorio para las secuencias fasta
+mkdir Fasta
+
+#Descargar los genes mitocondriales seleccionados
+mitogen=("COI" "NADH" "ND4" "12S" "16S")
+organisms=("Pristimantis labiosus" "Pristimantis crenunguis" "Pristimantis chocoensis" "Pristimantis actites" "Pristimantis lanthanites" )
+for mito in "${mitogen[@]}"
+do
+for org in "${organisms[@]}"
+
+do
+    /u/scratch/d/dechavez/Bioinformatica-PUCE/MastBio/edirect/esearch -db nuccore -query "$mito[Gene] AND $org[Organism]" | \
+    /u/scratch/d/dechavez/Bioinformatica-PUCE/MastBio/edirect/efetch -format fasta > "Genes/${mito}_${org}.fasta"
+done
+done
+
+#Concatenar secuencias de cada gen
+for seq in *_*.fasta; do
+    gen="${file%%_*}"
+    cat "${gen}_"*.fasta > "${gen}.fasta"
+done
+
+
+#Alinear secuencias
+cd Fasta
+for Seqs in *.fasta; do ../Scripts/muscle3.8.31_i86linux64 -in $Seqs -out muscle_$x; done
+
+#Hacer filogenias con IQTREE
+module load iqtree/2.2.2.6
+
+iqtree2 -s muscle_COI.fasta
+iqtree2 -s muscle_12S.fasta
+iqtree2 -s muscle_16S.fasta
+iqtree2 -s muscle_NADH.fasta
+iqtree2 -s muscle_ND4.fasta
+
+#Crear una carpeta para cada elemento
+cd ..
+mkdir Muscle/ Iqtree/
+mv Fasta/*.treefile Iqtree/
+mv Fasta/muscle_* Muscle/
+
